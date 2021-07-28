@@ -9,11 +9,6 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import {
-  check_password,
-  read_store_async,
-  delete_registrations,
-} from './Functions';
 
 import {
   Left,
@@ -47,29 +42,22 @@ const Binding = ({navigation}) => {
   const [model, setmodel] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
 
-  const onSelectedItemsChange = selectedItems => {
+  const locations = selectedItems => {
     // Set Selected Items
-    setSelectedItems(selectedItems);
+    setlocation(selectedItems);
+    console.log(selectedItems);
   };
-  const items = [
-    // name key is must. It is to show the text in front
-    {id: 6, name: 'angellist'},
-    {id: 2, name: 'codepen'},
-    {id: 3, name: 'envelope'},
-    {id: 4, name: 'etsy'},
-    {id: 5, name: 'facebook'},
-    {id: 7, name: 'foursquare'},
-    {id: 67, name: 'github-alt'},
-    {id: 8, name: 'github'},
-    {id: 987654, name: 'gitlab'},
-    {id: 10, name: 'instagram'},
-  ];
+  const appliances = selectedItems => {
+    // Set Selected Items
+    setappliance(selectedItems);
+    console.log(selectedItems);
+  };
   useFocusEffect(
     React.useCallback(() => {
       retrieveData();
     }, [retrieveData]),
   );
-  console.log('typeof', typeof filedata);
+
   const retrieveData = async () => {
     try {
       // const value = await AsyncStorage.getItem('user_config');
@@ -89,12 +77,6 @@ const Binding = ({navigation}) => {
           var temp = [];
           for (let j = 0; j < results.rows.length; ++j)
             temp.push(results.rows.item(j));
-          let locdata_str = JSON.stringify(temp);
-          let replace = locdata_str.replace('[', '').replace(']', '');
-          console.log('replace', replace);
-          let replace1 = JSON.stringify(replace);
-          let locdata_obj = JSON.parse(replace1);
-          console.log('locdata_obj', locdata_obj);
           setasyncloc(temp);
         });
       });
@@ -103,17 +85,17 @@ const Binding = ({navigation}) => {
           var temp = [];
           for (let i = 0; i < results.rows.length; ++i)
             temp.push(results.rows.item(i));
-          let items = JSON.stringify(temp);
-          console.log('appliance', items);
+          setasyncapp(temp);
         });
       });
-      // let async_data = JSON.parse(value);
-      //  console.log('async data loc:', async_data);s
-      // console.log('async data app:', async_data.appliance);
-      // setowner(async_data.owner.owner_name);
-      // setasyncloc(async_data.location);
-      // setasyncapp(async_data.appliance);
-      // setasyncbind(async_data.Binding);
+      db.transaction(tx => {
+        tx.executeSql('SELECT * FROM binding_reg', [], (tx, results) => {
+          var temp = [];
+          for (let i = 0; i < results.rows.length; ++i)
+            temp.push(results.rows.item(i));
+          setasyncbind(temp);
+        });
+      });
     } catch (error) {
       console.log('error', error);
     }
@@ -122,14 +104,25 @@ const Binding = ({navigation}) => {
   const handledeletePress = item => {
     console.log('chosen item to delete', item);
 
-    const store = async userdata => {
-      let bind_del = await delete_registrations('binding_event', userdata);
-      if (bind_del == 'succesfully deleted') {
-        navigation.navigate('DummyScreen', {
-          paramKey: 'Binding_delete',
-        });
-      }
-    };
+    function deletebinding(userdata) {
+      db.transaction(tx => {
+        tx.executeSql(
+          'DELETE FROM  binding_reg where name=?',
+          [userdata.name],
+          (tx, results) => {
+            console.log('Results', results.rowsAffected);
+            if (results.rowsAffected > 0) {
+              navigation.navigate('DummyScreen', {
+                paramKey: 'Binding_delete',
+              });
+            }
+          },
+          (tx, error) => {
+            console.log('error', error);
+          },
+        );
+      });
+    }
 
     Alert.alert(
       'Are you sure ',
@@ -138,7 +131,7 @@ const Binding = ({navigation}) => {
         {
           text: 'Ok',
 
-          onPress: () => store(item),
+          onPress: () => deletebinding(item),
         },
         {
           text: 'cancel',
@@ -148,17 +141,10 @@ const Binding = ({navigation}) => {
       ],
       {cancelable: true},
     );
-
-    const getData = async () => {
-      const value = await AsyncStorage.getItem('user_config');
-      console.log('data read from async >>', value);
-      if (value != null) {
-        console.log(' after storing new data inside async storage ', value);
-      }
-    };
   };
 
   const handleSubmitPress = async () => {
+    console.log(location, appliance);
     if (!location) {
       alert('Please enter location');
       return;
@@ -167,44 +153,48 @@ const Binding = ({navigation}) => {
       alert('Please enter appliance');
       return;
     }
-    if (!model) {
-      alert('Please enter model');
-      return;
-    }
-    let app1 = JSON.parse(appliance);
-    let loc1 = JSON.parse(location);
+    // if (!model) {
+    //   alert('Please enter model');
+    //   return;
+    // }
+    let today = new Date();
+    let date =
+      today.getFullYear() +
+      '-' +
+      (today.getMonth() + 1) +
+      '-' +
+      today.getDate();
+    let date1 = today.getFullYear() + (today.getMonth() + 1) + today.getDate();
+    let time =
+      today.getHours() + ':' + today.getMinutes() + ':' + today.getSeconds();
+    let dateTime = date + time;
 
-    let app2 = JSON.stringify(app1);
-    let loc2 = JSON.stringify(loc1);
-    let mod2 = JSON.stringify(model);
-    let own1 = JSON.stringify(owner);
-    let binding =
-      own1.toUpperCase() +
-      '_' +
-      loc2.toUpperCase() +
-      '_' +
-      app2.toUpperCase() +
-      '_' +
-      mod2.toUpperCase();
+    let binding = owner.toString() + '_' + location + '_' + appliance;
+    console.log('binding', binding.toString());
 
-    console.log('binding', binding);
-
-    let data2 = binding;
-    if (data2 != null) {
-      let bind_add = await read_store_async('binding_event', data2);
-      if (bind_add == 'data is updated') {
-        navigation.navigate('DummyScreen', {
-          paramKey: 'Binding',
-        });
-      } else if (bind_add == 'same data found ') {
-        navigation.navigate('DummyScreen', {
-          paramKey: 'Binding_samedata',
-        });
-      }
-    }
+    db.transaction(function (tx) {
+      tx.executeSql(
+        `INSERT INTO binding_reg (id,name)
+               VALUES (?,?)`,
+        [dateTime.toString(), binding.toString().toUpperCase()],
+        (tx, results) => {
+          console.log('Results', results.rowsAffected);
+          if (results.rowsAffected > 0) {
+            navigation.navigate('DummyScreen', {
+              paramKey: 'Binding',
+            });
+          }
+        },
+        (tx, error) => {
+          navigation.navigate('DummyScreen', {
+            paramKey: 'Binding_samedata',
+          });
+        },
+      );
+    });
   };
-  console.log('final data', asyncloc);
 
+  //pair/unpair:snehal_hall_fan_havels-ceilingfan-yorker
   return (
     <View
       style={{
@@ -215,8 +205,49 @@ const Binding = ({navigation}) => {
         marginRight: 35,
         margin: 10,
       }}>
-      <Text> asyncloc</Text>
       <MultiSelect
+        hideTags
+        items={asyncloc}
+        uniqueKey="name"
+        onSelectedItemsChange={locations}
+        selectedItems={location}
+        single={true}
+        selectText="Pick Locations"
+        searchInputPlaceholderText="Search Locations..."
+        onChangeInput={text => console.log(text)}
+        tagRemoveIconColor="#CCC"
+        tagBorderColor="#CCC"
+        tagTextColor="#CCC"
+        selectedItemTextColor="#CCC"
+        selectedItemIconColor="#CCC"
+        itemTextColor="#000"
+        displayKey="name"
+        searchInputStyle={{color: '#CCC'}}
+        submitButtonColor="#48d22b"
+        submitButtonText="Submit"
+      />
+      <MultiSelect
+        hideTags
+        items={asyncapp}
+        uniqueKey="name"
+        onSelectedItemsChange={appliances}
+        selectedItems={appliance}
+        single={true}
+        selectText="Pick Appliances"
+        searchInputPlaceholderText="Search Appliances..."
+        onChangeInput={text => console.log(text)}
+        tagRemoveIconColor="#CCC"
+        tagBorderColor="#CCC"
+        tagTextColor="#CCC"
+        selectedItemTextColor="#CCC"
+        selectedItemIconColor="#CCC"
+        itemTextColor="#000"
+        displayKey="name"
+        searchInputStyle={{color: '#CCC'}}
+        submitButtonColor="#48d22b"
+        submitButtonText="Submit"
+      />
+      {/* <MultiSelect
         hideTags
         items={asyncloc}
         uniqueKey="id"
@@ -236,7 +267,7 @@ const Binding = ({navigation}) => {
         searchInputStyle={{color: '#CCC'}}
         submitButtonColor="#48d22b"
         submitButtonText="Submit"
-      />
+      /> */}
       {/* <ModalDropdown
         textStyle={{
           fontSize: 16,
@@ -272,7 +303,7 @@ const Binding = ({navigation}) => {
         defaultValue={'select model'}
         onSelect={(idx, value) => setmodel(value)}></ModalDropdown> */}
 
-      <SearchableDropdown
+      {/* <SearchableDropdown
         keyboardShouldPersistTaps="always"
         onTextChange={text => Alert.alert(text)}
         resetValue={false}
@@ -300,7 +331,7 @@ const Binding = ({navigation}) => {
         items={asyncloc}
         defaultIndex={2}
         placeholder="select location"
-      />
+      /> */}
 
       <TouchableOpacity
         style={styles.button}
@@ -327,7 +358,7 @@ const Binding = ({navigation}) => {
                 bottom: 0,
                 fontSize: 14,
               }}>
-              {item}
+              {item.name}
             </Text>
             <Left>
               <Button

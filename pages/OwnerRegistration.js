@@ -30,8 +30,6 @@ let configurations = {
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import {read_store_async} from './Functions';
-
 const OwnerRegistration = ({navigation}) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [OwnerName, setOwnerName] = useState('');
@@ -76,33 +74,44 @@ const OwnerRegistration = ({navigation}) => {
 
     let data2 = JSON.stringify(configurations);
     if (data2 != null) {
-      let reg = await read_store_async('owner_event', data2);
-      console.log('reg', reg);
-      if (reg == 'Data is updated') {
-        Alert.alert(
-          'Success',
-          'Data is updated',
+      db.transaction(function (tx) {
+        tx.executeSql(
+          `INSERT INTO owner_reg ( 
+              owner_name, owner_password,MailId,PhoneNumber,Property_name ,Area ,State ,country ,Street,Door_Number)
+               VALUES (?,?,?,?,?,?,?,?,?,?)`,
           [
-            {
-              text: 'Ok',
-              onPress: () => navigation.navigate('FirstPage'),
-            },
+            userdata_obj.owner.owner_name,
+            userdata_obj.owner.owner_password,
+            userdata_obj.owner.MailId,
+            userdata_obj.owner.PhoneNumber,
+            userdata_obj.owner.Property_name,
+            userdata_obj.owner.Area,
+            userdata_obj.owner.State,
+            userdata_obj.owner.country,
+            userdata_obj.owner.Street,
+            userdata_obj.owner.Door_Number,
           ],
-          {cancelable: false},
+          (tx, results) => {
+            console.log('Results', results.rowsAffected);
+            if (results.rowsAffected > 0) {
+              Alert.alert(
+                'Success',
+                'Data is updated',
+                [
+                  {
+                    text: 'Ok',
+                    onPress: () => navigation.navigate('FirstPage'),
+                  },
+                ],
+                {cancelable: false},
+              );
+            }
+          },
+          (tx, error) => {
+            console.log('error', error);
+          },
         );
-      } else {
-        Alert.alert(
-          'Failure',
-          'Data is not updated',
-          [
-            {
-              text: 'Ok',
-              onPress: () => navigation.navigate('FirstPage'),
-            },
-          ],
-          {cancelable: false},
-        );
-      }
+      });
     }
   };
 

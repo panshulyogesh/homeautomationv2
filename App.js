@@ -99,7 +99,7 @@ const App = () => {
           if (res.rows.length == 0) {
             txn.executeSql('DROP TABLE IF EXISTS location_reg', []);
             txn.executeSql(
-              `CREATE TABLE IF NOT EXISTS location_reg(id TEXT ,location TEXT PRIMARY KEY)`,
+              `CREATE TABLE IF NOT EXISTS location_reg(id TEXT ,name TEXT PRIMARY KEY)`,
               [],
             );
           }
@@ -118,7 +118,7 @@ const App = () => {
           if (res.rows.length == 0) {
             txn.executeSql('DROP TABLE IF EXISTS appliance_reg', []);
             txn.executeSql(
-              `CREATE TABLE IF NOT EXISTS appliance_reg(id TEXT ,appliance TEXT PRIMARY KEY)`,
+              `CREATE TABLE IF NOT EXISTS appliance_reg(id TEXT ,name TEXT PRIMARY KEY)`,
               [],
             );
           }
@@ -134,7 +134,7 @@ const App = () => {
           if (res.rows.length == 0) {
             txn.executeSql('DROP TABLE IF EXISTS binding_reg', []);
             txn.executeSql(
-              `CREATE TABLE IF NOT EXISTS binding_reg(binding TEXT PRIMARY KEY)`,
+              `CREATE TABLE IF NOT EXISTS binding_reg(id TEXT,name TEXT PRIMARY KEY)`,
               [],
             );
           }

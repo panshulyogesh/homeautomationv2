@@ -2,10 +2,9 @@ import React, {useState} from 'react';
 import {StyleSheet, Text, View, TouchableOpacity, Alert} from 'react-native';
 import DialogInput from 'react-native-dialog-input';
 import {useFocusEffect} from '@react-navigation/native';
-import {check_password} from './Functions';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Binding from './Binding';
-import {pwd_status} from './FirstPage';
+
 import {openDatabase} from 'react-native-sqlite-storage';
 var db = openDatabase({name: 'UserDatabase.db'});
 

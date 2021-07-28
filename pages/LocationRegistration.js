@@ -23,24 +23,20 @@ import {
 } from 'native-base';
 
 import ModalDropdown from 'react-native-modal-dropdown';
+
 import {useFocusEffect} from '@react-navigation/native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {loadOptions} from '@babel/core';
 
 import {openDatabase} from 'react-native-sqlite-storage';
-var db = openDatabase({name: 'UserDatabase.db'});
 
-import {
-  //check_password,
-  read_store_async,
-  delete_registrations,
-} from './Functions';
+var db = openDatabase({name: 'UserDatabase.db'});
 
 const LocationRegistration = ({navigation}) => {
   const [LocationName, setLocationName] = useState(''); //text input field loc
   const [asyncloc, setasyncloc] = useState([]); //to view dropodown values
   const [drop_loc, setdrop_loc] = useState(''); //to capture dropdown vals
+  const [bind, setbind] = useState('');
 
   useFocusEffect(
     React.useCallback(() => {
@@ -74,8 +70,8 @@ const LocationRegistration = ({navigation}) => {
     function deletelocation(userdata) {
       db.transaction(tx => {
         tx.executeSql(
-          'DELETE FROM  location_reg where location=?',
-          [userdata.location],
+          'DELETE FROM  location_reg where name=?',
+          [userdata.name],
           (tx, results) => {
             console.log('Results', results.rowsAffected);
             if (results.rowsAffected > 0) {
@@ -88,6 +84,37 @@ const LocationRegistration = ({navigation}) => {
             console.log('error', error);
           },
         );
+      });
+      db.transaction(tx => {
+        tx.executeSql('SELECT * FROM binding_reg', [], (tx, results) => {
+          var temp = [];
+          for (let i = 0; i < results.rows.length; ++i)
+            temp.push(results.rows.item(i));
+          console.log(temp);
+
+          if (temp.length > 0) {
+            temp.forEach(function (a, index) {
+              let temp1 = [];
+              temp1.push(a);
+
+              const result = temp1.find(x => x.name.includes(userdata.name));
+              console.log('result', result);
+              if (result) {
+                deletebinding(result);
+              }
+            });
+          }
+
+          // var inventory = [
+          //   {name: 'owner_hall_light', id: 2},
+          //   {name: 'owner_kitchen_ac', id: 0},
+          //   {name: 'owner_bed_fan', id: 5},
+          // ];
+          // let find = 'lamp';
+          // const result = inventory.find(x => x.name.includes(find));
+          // //expected output
+          // console.log(result); //   {name: 'owner_kitchen_ac', id: 0}
+        });
       });
     }
 
@@ -109,7 +136,24 @@ const LocationRegistration = ({navigation}) => {
       {cancelable: true},
     );
   };
-
+  function deletebinding(userdata) {
+    console.log(userdata.id);
+    db.transaction(tx => {
+      tx.executeSql(
+        'DELETE FROM  binding_reg where id=?',
+        [userdata.id],
+        (tx, results) => {
+          console.log('Results', results.rowsAffected);
+          if (results.rowsAffected > 0) {
+            console.log('deleted from binding table');
+          }
+        },
+        (tx, error) => {
+          console.log('error', error);
+        },
+      );
+    });
+  }
   const handleSubmitPress = async () => {
     if (!LocationName) {
       alert('Please enter location');
@@ -129,7 +173,7 @@ const LocationRegistration = ({navigation}) => {
 
     db.transaction(function (tx) {
       tx.executeSql(
-        `INSERT INTO location_reg (id,location)
+        `INSERT INTO location_reg (id,name)
                VALUES (?,?)`,
         [dateTime.toString(), LocationName.toString().toUpperCase()],
         (tx, results) => {
@@ -206,7 +250,7 @@ const LocationRegistration = ({navigation}) => {
                   backgroundColor: 'beige',
                   bottom: 0,
                 }}>
-                {item.location}
+                {item.name}
               </Text>
               <Left>
                 <Button

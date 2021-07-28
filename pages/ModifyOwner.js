@@ -15,7 +15,6 @@ import {
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-
 let configurations = {
   owner: {
     owner_name: '',
@@ -33,7 +32,6 @@ let configurations = {
 import {openDatabase} from 'react-native-sqlite-storage';
 var db = openDatabase({name: 'UserDatabase.db'});
 
-import {check_password, read_store_async} from './Functions';
 import {useFocusEffect} from '@react-navigation/native';
 const ModifyOwner = ({navigation}) => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -49,13 +47,7 @@ const ModifyOwner = ({navigation}) => {
   const [Door_Number, setDoor_Number] = useState('');
   const [owner, setowner] = useState('');
 
-  useFocusEffect(
-    React.useCallback(() => {
-      
-    }, []),
-  );
-
-  
+  useFocusEffect(React.useCallback(() => {}, []));
 
   const handleSubmitPress = async () => {
     setModalVisible(!modalVisible);
@@ -86,8 +78,6 @@ const ModifyOwner = ({navigation}) => {
     configurations.owner.Street = Street.toUpperCase();
     configurations.owner.Door_Number = Door_Number.toUpperCase();
 
-  
-   
     let data2 = JSON.stringify(configurations);
     if (data2 != null) {
       let reg = await read_store_async('owner_event', data2);
@@ -96,7 +86,7 @@ const ModifyOwner = ({navigation}) => {
         Alert.alert(
           'Success',
           'Data is updated',
-          
+
           [
             {
               text: 'Ok',

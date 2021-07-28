@@ -7,10 +7,8 @@ import {
   SafeAreaView,
 } from 'react-native';
 import {useFocusEffect} from '@react-navigation/native';
-export var pwd_status = false;
-const FirstPage = ({navigation}) => {
-  
 
+const FirstPage = ({navigation}) => {
   return (
     <SafeAreaView style={{flex: 1}}>
       <View style={{flex: 1, padding: 16}}>
@@ -51,4 +49,4 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
 });
-export default FirstPage ;
+export default FirstPage;

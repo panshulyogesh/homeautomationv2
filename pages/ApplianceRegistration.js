@@ -21,12 +21,7 @@ import {
   Spinner,
 } from 'native-base';
 import {useFocusEffect} from '@react-navigation/native';
-import ModalDropdown from 'react-native-modal-dropdown';
-import {
-  check_password,
-  read_store_async,
-  delete_registrations,
-} from './Functions';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {openDatabase} from 'react-native-sqlite-storage';
 var db = openDatabase({name: 'UserDatabase.db'});
@@ -51,12 +46,8 @@ const ApplianceRegistration = ({navigation}) => {
           for (let i = 0; i < results.rows.length; ++i)
             temp.push(results.rows.item(i));
           setasyncapp(temp);
-          // console.log("items",temp);
         });
       });
-
-      //console.log('async data loc:', async_data);
-      // console.log('async data app:', async_data.appliance);
     } catch (error) {
       console.log('error', error);
     }
@@ -68,8 +59,8 @@ const ApplianceRegistration = ({navigation}) => {
     function deleteappliance(userdata) {
       db.transaction(tx => {
         tx.executeSql(
-          'DELETE FROM  appliance_reg where appliance=?',
-          [userdata.appliance],
+          'DELETE FROM  appliance_reg where name=?',
+          [userdata.name],
           (tx, results) => {
             console.log('Results', results.rowsAffected);
             if (results.rowsAffected > 0) {
@@ -82,6 +73,37 @@ const ApplianceRegistration = ({navigation}) => {
             console.log('error', error);
           },
         );
+      });
+      db.transaction(tx => {
+        tx.executeSql('SELECT * FROM binding_reg', [], (tx, results) => {
+          var temp = [];
+          for (let i = 0; i < results.rows.length; ++i)
+            temp.push(results.rows.item(i));
+          console.log(temp);
+          console.log('temp length', temp.length);
+          if (temp.length > 0) {
+            temp.forEach(function (a, index) {
+              let temp1 = [];
+              temp1.push(a);
+
+              const result = temp1.find(x => x.name.includes(userdata.name));
+              console.log('result', result);
+              if (result) {
+                deletebinding(result);
+              }
+            });
+          }
+
+          // var inventory = [
+          //   {name: 'owner_hall_light', id: 2},
+          //   {name: 'owner_kitchen_ac', id: 0},
+          //   {name: 'owner_bed_fan', id: 5},
+          // ];
+          // let find = 'lamp';
+          // const result = inventory.find(x => x.name.includes(find));
+          // //expected output
+          // console.log(result); //   {name: 'owner_kitchen_ac', id: 0}
+        });
       });
     }
 
@@ -103,7 +125,24 @@ const ApplianceRegistration = ({navigation}) => {
       {cancelable: true},
     );
   };
-
+  function deletebinding(userdata) {
+    console.log(userdata.id);
+    db.transaction(tx => {
+      tx.executeSql(
+        'DELETE FROM  binding_reg where id=?',
+        [userdata.id],
+        (tx, results) => {
+          console.log('Results', results.rowsAffected);
+          if (results.rowsAffected > 0) {
+            console.log('deleted from binding table');
+          }
+        },
+        (tx, error) => {
+          console.log('error', error);
+        },
+      );
+    });
+  }
   const handleSubmitPress = async () => {
     if (!Device) {
       alert('Please enter Device');
@@ -122,7 +161,7 @@ const ApplianceRegistration = ({navigation}) => {
     let dateTime = date + time;
     db.transaction(function (tx) {
       tx.executeSql(
-        `INSERT INTO appliance_reg (id,appliance)
+        `INSERT INTO appliance_reg (id,name)
                  VALUES (?,?)`,
         [dateTime.toString(), Device.toString().toUpperCase()],
         (tx, results) => {
@@ -196,7 +235,7 @@ const ApplianceRegistration = ({navigation}) => {
                   backgroundColor: 'beige',
                   bottom: 0,
                 }}>
-                {item.appliance}
+                {item.name}
               </Text>
               <Left>
                 <Button
