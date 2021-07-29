@@ -28,6 +28,7 @@ import ModalDropdown from 'react-native-modal-dropdown';
 import SearchableDropdown from 'react-native-searchable-dropdown';
 import DropDownPicker from 'react-native-dropdown-picker';
 import MultiSelect from 'react-native-multiple-select';
+import TcpSocket from 'react-native-tcp-socket';
 import {openDatabase} from 'react-native-sqlite-storage';
 var db = openDatabase({name: 'UserDatabase.db'});
 
@@ -40,7 +41,6 @@ const Binding = ({navigation}) => {
   const [appliance, setappliance] = useState([]);
   const [asyncbind, setasyncbind] = useState([]);
   const [model, setmodel] = useState([]);
-  const [selectedItems, setSelectedItems] = useState([]);
 
   const locations = selectedItems => {
     // Set Selected Items
@@ -62,7 +62,7 @@ const Binding = ({navigation}) => {
     try {
       // const value = await AsyncStorage.getItem('user_config');
       db.transaction(tx => {
-        tx.executeSql('SELECT * FROM owner_reg', [], (tx, results) => {
+        tx.executeSql('SELECT * FROM Owner_Reg', [], (tx, results) => {
           var temp = [];
           for (let i = 0; i < results.rows.length; ++i)
             temp.push(results.rows.item(i));
@@ -73,7 +73,7 @@ const Binding = ({navigation}) => {
         });
       });
       db.transaction(tx => {
-        tx.executeSql('SELECT * FROM location_reg', [], (tx, results) => {
+        tx.executeSql('SELECT * FROM Location_Reg', [], (tx, results) => {
           var temp = [];
           for (let j = 0; j < results.rows.length; ++j)
             temp.push(results.rows.item(j));
@@ -81,7 +81,7 @@ const Binding = ({navigation}) => {
         });
       });
       db.transaction(tx => {
-        tx.executeSql('SELECT * FROM appliance_reg', [], (tx, results) => {
+        tx.executeSql('SELECT * FROM Appliance_Reg', [], (tx, results) => {
           var temp = [];
           for (let i = 0; i < results.rows.length; ++i)
             temp.push(results.rows.item(i));
@@ -89,7 +89,7 @@ const Binding = ({navigation}) => {
         });
       });
       db.transaction(tx => {
-        tx.executeSql('SELECT * FROM binding_reg', [], (tx, results) => {
+        tx.executeSql('SELECT * FROM Binding_Reg', [], (tx, results) => {
           var temp = [];
           for (let i = 0; i < results.rows.length; ++i)
             temp.push(results.rows.item(i));
@@ -107,8 +107,8 @@ const Binding = ({navigation}) => {
     function deletebinding(userdata) {
       db.transaction(tx => {
         tx.executeSql(
-          'DELETE FROM  binding_reg where name=?',
-          [userdata.name],
+          'DELETE FROM  Binding_Reg where Binding=?',
+          [userdata.Binding],
           (tx, results) => {
             console.log('Results', results.rowsAffected);
             if (results.rowsAffected > 0) {
@@ -144,39 +144,32 @@ const Binding = ({navigation}) => {
   };
 
   const handleSubmitPress = async () => {
-    console.log(location, appliance);
-    if (!location) {
+    if (location.length == 0) {
       alert('Please enter location');
       return;
     }
-    if (!appliance) {
+    if (appliance.length == 0) {
       alert('Please enter appliance');
       return;
     }
-    // if (!model) {
-    //   alert('Please enter model');
-    //   return;
-    // }
-    let today = new Date();
-    let date =
-      today.getFullYear() +
-      '-' +
-      (today.getMonth() + 1) +
-      '-' +
-      today.getDate();
-    let date1 = today.getFullYear() + (today.getMonth() + 1) + today.getDate();
-    let time =
-      today.getHours() + ':' + today.getMinutes() + ':' + today.getSeconds();
-    let dateTime = date + time;
+    if (!model) {
+      alert('Please enter model');
+      return;
+    }
 
-    let binding = owner.toString() + '_' + location + '_' + appliance;
+    // let binding = owner.toString() + '_' + location + '_' + appliance;
     console.log('binding', binding.toString());
 
     db.transaction(function (tx) {
       tx.executeSql(
-        `INSERT INTO binding_reg (id,name)
-               VALUES (?,?)`,
-        [dateTime.toString(), binding.toString().toUpperCase()],
+        `INSERT INTO Binding_Reg (location,appliance,model,paired/unpaired)
+               VALUES (?,?,?,?)`,
+        [
+          location.toString().toUpperCase(),
+          appliance.toString().toUpperCase(),
+          model.toString().toUpperCase(),
+          'unpaired',
+        ],
         (tx, results) => {
           console.log('Results', results.rowsAffected);
           if (results.rowsAffected > 0) {
@@ -194,7 +187,54 @@ const Binding = ({navigation}) => {
     });
   };
 
-  //pair/unpair:snehal_hall_fan_havels-ceilingfan-yorker
+  function handlepairing(item) {
+    console.log('----------------');
+    console.log('data from user for pairing', item.Binding);
+    let pairingstring = 'pair' + ':' + item.Binding + ';';
+    console.log(pairingstring);
+    let client = TcpSocket.createConnection(
+      {port: 80, host: '192.168.4.1'},
+      () => {
+        client.write(pairingstring.toString());
+      },
+    );
+    client.on('connect', () => {
+      console.log('Opened client on ' + JSON.stringify(client.address()));
+    });
+    client.on('data', data => {
+      console.log('message was received from ESP32 ==>', data.toString());
+      client.end();
+    });
+    client.on('error', error => {
+      console.log('error', error);
+      client.end();
+    });
+    client.on('close', () => {
+      console.log('Connection closed!');
+      client.end();
+    });
+  }
+  function handlerefresh() {
+    let url = 'http://homeautomation.sowcare.net/data';
+    fetch(url, {
+      method: 'GET',
+      // withCredentials: true,
+      // credentials: 'include',
+      headers: {
+        // Authorization: 'bearer' + '83l626XhHk',
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log('response from webservice ===>', data);
+      })
+      .catch(error => {
+        console.error('error in webservice====>', error);
+      });
+  }
+  //pair/unpair:snehal_hall_fan_havels-ceilingfan-yorker;
+  //ownername,property,town,village ,country,street
   return (
     <View
       style={{
@@ -206,9 +246,8 @@ const Binding = ({navigation}) => {
         margin: 10,
       }}>
       <MultiSelect
-        hideTags
         items={asyncloc}
-        uniqueKey="name"
+        uniqueKey="Location"
         onSelectedItemsChange={locations}
         selectedItems={location}
         single={true}
@@ -221,15 +260,14 @@ const Binding = ({navigation}) => {
         selectedItemTextColor="#CCC"
         selectedItemIconColor="#CCC"
         itemTextColor="#000"
-        displayKey="name"
+        displayKey="Location"
         searchInputStyle={{color: '#CCC'}}
         submitButtonColor="#48d22b"
         submitButtonText="Submit"
       />
       <MultiSelect
-        hideTags
         items={asyncapp}
-        uniqueKey="name"
+        uniqueKey="Appliance"
         onSelectedItemsChange={appliances}
         selectedItems={appliance}
         single={true}
@@ -242,20 +280,19 @@ const Binding = ({navigation}) => {
         selectedItemTextColor="#CCC"
         selectedItemIconColor="#CCC"
         itemTextColor="#000"
-        displayKey="name"
+        displayKey="Appliance"
         searchInputStyle={{color: '#CCC'}}
         submitButtonColor="#48d22b"
         submitButtonText="Submit"
       />
       {/* <MultiSelect
-        hideTags
-        items={asyncloc}
-        uniqueKey="id"
-        onSelectedItemsChange={onSelectedItemsChange}
-        selectedItems={selectedItems}
+        items={asyncapp}
+        uniqueKey="Model"
+        onSelectedItemsChange={appliances}
+        selectedItems={appliance}
         single={true}
-        selectText="Pick Items"
-        searchInputPlaceholderText="Search Items..."
+        selectText="Pick Appliances"
+        searchInputPlaceholderText="Search Appliances..."
         onChangeInput={text => console.log(text)}
         tagRemoveIconColor="#CCC"
         tagBorderColor="#CCC"
@@ -263,76 +300,14 @@ const Binding = ({navigation}) => {
         selectedItemTextColor="#CCC"
         selectedItemIconColor="#CCC"
         itemTextColor="#000"
-        displayKey="name"
+        displayKey="Appliance"
         searchInputStyle={{color: '#CCC'}}
         submitButtonColor="#48d22b"
         submitButtonText="Submit"
       /> */}
-      {/* <ModalDropdown
-        textStyle={{
-          fontSize: 16,
-          paddingTop: 8,
-          paddingBottom: 8,
-          alignItems: 'center',
-        }}
-        dropdownTextStyle={{fontSize: 30}}
-        options={asyncloc}
-        defaultValue={'select location'}
-        onSelect={(idx, value) => setlocation(value)}></ModalDropdown> */}
-
-      {/* <ModalDropdown
-        textStyle={{
-          fontSize: 16,
-          paddingTop: 8,
-          paddingBottom: 8,
-          alignItems: 'center',
-        }}
-        dropdownTextStyle={{fontSize: 30}}
-        options={asyncapp}
-        defaultValue={'select appliance'}
-        onSelect={(idx, value) => setappliance(value)}></ModalDropdown> */}
-      {/* <ModalDropdown
-        textStyle={{
-          fontSize: 16,
-          paddingTop: 8,
-          paddingBottom: 8,
-          alignItems: 'center',
-        }}
-        dropdownTextStyle={{fontSize: 30}}
-        options={filedata.model}
-        defaultValue={'select model'}
-        onSelect={(idx, value) => setmodel(value)}></ModalDropdown> */}
-
-      {/* <SearchableDropdown
-        keyboardShouldPersistTaps="always"
-        onTextChange={text => Alert.alert(text)}
-        resetValue={false}
-        onItemSelect={item => setmodel(item.appliance)}
-        containerStyle={{padding: 5}}
-        textInputStyle={{
-          padding: 12,
-          borderWidth: 1,
-          borderColor: '#ccc',
-          backgroundColor: '#FAF7F6',
-        }}
-        itemStyle={{
-          padding: 10,
-          marginTop: 2,
-          backgroundColor: '#FAF9F8',
-          borderColor: '#bbb',
-          borderWidth: 1,
-        }}
-        itemTextStyle={{
-          color: '#222',
-        }}
-        itemsContainerStyle={{
-          maxHeight: '60%',
-        }}
-        items={asyncloc}
-        defaultIndex={2}
-        placeholder="select location"
-      /> */}
-
+      <TouchableOpacity style={styles.button} onPress={() => handlerefresh()}>
+        <Text>refresh</Text>
+      </TouchableOpacity>
       <TouchableOpacity
         style={styles.button}
         onPress={() => handleSubmitPress()}>
@@ -343,31 +318,36 @@ const Binding = ({navigation}) => {
         keyExtractor={(item, id) => id}
         data={asyncbind}
         renderItem={({item}) => (
-          <View
-            style={{
-              flex: 1,
-              height: 40,
-              marginTop: 20,
-              margin: 10,
-            }}>
+          <View>
             <Text
+              adjustsFontSizeToFit
+              numberOfLines={6}
               style={{
-                position: 'absolute',
-                width: '100%',
-                backgroundColor: 'beige',
-                bottom: 0,
-                fontSize: 14,
+                textAlignVertical: 'center',
+                textAlign: 'center',
+                backgroundColor: 'rgba(0,0,0,0)',
+                color: 'black',
+                fontWeight: 'bold',
               }}>
-              {item.name}
+              {item.Binding}
             </Text>
-            <Left>
+            <View
+              style={{
+                flex: 10,
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+              }}>
+              <Button
+                onPress={() => handlepairing(item)}
+                style={{backgroundColor: 'green', width: '18%', height: 45}}>
+                <Icon name="wifi" active />
+              </Button>
               <Button
                 onPress={() => handledeletePress(item)}
-                style={styles.actionButton}
-                danger>
+                style={{backgroundColor: 'red', width: '18%', height: 45}}>
                 <Icon name="trash" active />
               </Button>
-            </Left>
+            </View>
           </View>
         )}
         ItemSeparatorComponent={() => {
@@ -389,14 +369,15 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
 
-  actionButton: {
-    marginLeft: 250,
-  },
-  actionButton1: {
-    marginLeft: 150,
-  },
   separatorLine: {
-    height: 1,
-    backgroundColor: 'black',
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderWidth: 2,
+    borderColor: 'rgba(0,0,0,.3)',
+    margin: 3,
   },
 });

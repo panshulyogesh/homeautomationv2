@@ -9,6 +9,7 @@ import {openDatabase} from 'react-native-sqlite-storage';
 var db = openDatabase({name: 'UserDatabase.db'});
 
 const SecondPage = ({navigation}) => {
+  const [ownerpwd, setownerpwd] = useState('');
   const [isDialogVisible, setisDialogVisible] = useState(false);
   const [view, setview] = useState(false);
   const [view1, setview1] = useState(false);
@@ -21,31 +22,74 @@ const SecondPage = ({navigation}) => {
     navigation.navigate('FirstPage');
   }
 
+  // const check_password = async pass => {
+  //   // const async_data_owner = await AsyncStorage.getItem('user_config');
+
+  //   db.transaction(tx => {
+  //     tx.executeSql('SELECT * FROM Owner_Reg', [], (tx, results) => {
+  //       var temp = [];
+  //       for (let i = 0; i < results.rows.length; ++i)
+  //         temp.push(results.rows.item(i));
+  //       //let items = JSON.stringify(temp);
+  //       let ownerdata_obj = temp;
+  //       console.log('inside db', ownerdata_obj[0].owner_password);
+  //       setownerpwd(ownerdata_obj[0].owner_password);
+  //       // setowner(ownerdata_obj[0].owner_password);
+  //     });
+  //   });
+
+  //   var result = '';
+  //   if (ownerpwd) {
+  //     if (pass == ownerpwd) {
+  //       result = 'valid';
+  //     } else {
+  //       result = 'invalid';
+  //     }
+  //     return result;
+  //   }
+  // };
   const sendInput = async (inputText, close) => {
     console.log('password ' + inputText);
-    let val = await check_password(inputText);
-    // console.log('val', val);
-    if (val == 'valid') {
-      pwd_status = true;
-      setview(false);
-      setisDialogVisible(close);
-    } else {
-      Alert.alert(
-        'Incorrect Credentials',
-        'Enter valid password',
-        [
-          {
-            text: 'Ok',
 
-            onPress: () => setisDialogVisible(true),
-          },
-        ],
-        {cancelable: false},
-      );
+    db.transaction(tx => {
+      tx.executeSql('SELECT * FROM Owner_Reg', [], (tx, results) => {
+        var temp = [];
+        for (let i = 0; i < results.rows.length; ++i)
+          temp.push(results.rows.item(i));
+        let ownerdata_obj = temp;
+        console.log('inside db', ownerdata_obj[0].owner_password);
+        setownerpwd(ownerdata_obj[0].owner_password);
+      });
+    });
+    console.log('ownerpwd', ownerpwd);
+    if (ownerpwd) {
+      if (inputText == ownerpwd) {
+        AsyncStorage.setItem('pwdstatus', JSON.stringify(true));
+        setisDialogVisible(close);
+      } else {
+        Alert.alert(
+          'Incorrect Credentials',
+          'Enter valid password',
+          [
+            {
+              text: 'Ok',
+
+              onPress: () => setisDialogVisible(true),
+            },
+          ],
+          {cancelable: false},
+        );
+      }
     }
   };
 
   const retrieve = async () => {
+    const read = await AsyncStorage.getItem('pwdstatus');
+
+    if (read == 'false') {
+      setisDialogVisible(true);
+    }
+
     db.transaction(tx => {
       tx.executeSql('SELECT * FROM owner_reg', [], (tx, results) => {
         var temp = [];
@@ -73,9 +117,10 @@ const SecondPage = ({navigation}) => {
         console.log(items);
         console.log(items.length);
         if (items.length > 2) {
+          setview(false);
           setview1(false);
           setview2(true);
-          //location does not exists show only loc button
+          //location  exists
         }
       });
     });
@@ -96,50 +141,6 @@ const SecondPage = ({navigation}) => {
         }
       });
     });
-    // if (read == null) {
-    //   setview(true);
-    // } else {
-    //   // if(pwd_status==0||count_iter>5){
-
-    //   //   setisDialogVisible(true);
-    //   // }else{
-
-    //   // }
-    //   if (pwd_status == false) {
-    //     // setisDialogVisible(true);
-    //     const obj = JSON.parse(read);
-    //     let own1 = obj.owner;
-    //     let own2 = JSON.stringify(own1);
-    //     let loc1 = obj.location;
-    //     let loc2 = JSON.stringify(loc1);
-    //     let app1 = obj.appliance;
-    //     let app2 = JSON.stringify(app1);
-    //     // console.log(own1, loc1, app1);
-    //     console.log(own2.length, loc2.length, app2.length);
-    //     if (own2.length) {
-    //       setisDialogVisible(true);
-    //       // console.log('owner registered');
-    //       setview1(true);
-    //       setview(false);
-    //       if (loc2.length > 3) {
-    //         setisDialogVisible(true);
-    //         // console.log('owner and loc registered');
-    //         setview2(true);
-    //         setview1(false);
-    //         setview(false);
-
-    //         if (app2.length > 3) {
-    //           setisDialogVisible(true);
-    //           // console.log('owner and loc and appliance registered');
-    //           setview3(true);
-    //           setview2(false);
-    //           setview1(false);
-    //           setview(false);
-    //         }
-    //       }
-    //     }
-    //   }
-    // }
   };
 
   useFocusEffect(

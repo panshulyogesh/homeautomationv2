@@ -36,13 +36,13 @@ function TabStack() {
         activeTintColor: '#FFFFFF',
         inactiveTintColor: '#F8F8F8',
         style: {
-          backgroundColor: '#633689',
+          backgroundColor: `#008080`,
         },
         labelStyle: {
           textAlign: 'center',
         },
         indicatorStyle: {
-          borderBottomColor: '#87B56A',
+          borderBottomColor: `#008080`,
           borderBottomWidth: 2,
         },
       }}>
@@ -67,13 +67,14 @@ const App = () => {
   useEffect(() => {
     db.transaction(function (txn) {
       txn.executeSql(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='owner_reg'",
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='Owner_Reg'",
         [],
         function (tx, res) {
           if (res.rows.length == 0) {
-            txn.executeSql('DROP TABLE IF EXISTS owner_reg', []);
+            txn.executeSql('DROP TABLE IF EXISTS Owner_Reg', []);
             txn.executeSql(
-              `CREATE TABLE IF NOT EXISTS owner_reg(
+              `CREATE TABLE IF NOT EXISTS Owner_Reg(
+              Id INTEGER PRIMARY KEY AUTOINCREMENT,
               owner_name TEXT,
               owner_password TEXT,
               MailId TEXT,
@@ -93,13 +94,13 @@ const App = () => {
 
     db.transaction(function (txn) {
       txn.executeSql(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='location_reg'",
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='Location_Reg'",
         [],
         function (tx, res) {
           if (res.rows.length == 0) {
-            txn.executeSql('DROP TABLE IF EXISTS location_reg', []);
+            txn.executeSql('DROP TABLE IF EXISTS Location_Reg', []);
             txn.executeSql(
-              `CREATE TABLE IF NOT EXISTS location_reg(id TEXT ,name TEXT PRIMARY KEY)`,
+              `CREATE TABLE IF NOT EXISTS Location_Reg(Location TEXT PRIMARY KEY)`,
               [],
             );
           }
@@ -112,13 +113,13 @@ const App = () => {
 
     db.transaction(function (txn) {
       txn.executeSql(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='appliance_reg'",
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='Appliance_Reg'",
         [],
         function (tx, res) {
           if (res.rows.length == 0) {
-            txn.executeSql('DROP TABLE IF EXISTS appliance_reg', []);
+            txn.executeSql('DROP TABLE IF EXISTS Appliance_Reg', []);
             txn.executeSql(
-              `CREATE TABLE IF NOT EXISTS appliance_reg(id TEXT ,name TEXT PRIMARY KEY)`,
+              `CREATE TABLE IF NOT EXISTS Appliance_Reg(Appliance TEXT PRIMARY KEY)`,
               [],
             );
           }
@@ -126,15 +127,18 @@ const App = () => {
       );
     });
 
+    //column name = LOC, APPLIANCE,MODEL,PAIRED/UNPAIRED,>> IF PAIRED MACID,PROPERTIES,status
+    //binding str=owner+loc+appli+model;
     db.transaction(function (txn) {
       txn.executeSql(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='binding_reg'",
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='Binding_Reg'",
         [],
         function (tx, res) {
           if (res.rows.length == 0) {
-            txn.executeSql('DROP TABLE IF EXISTS binding_reg', []);
+            txn.executeSql('DROP TABLE IF EXISTS Binding_reg', []);
             txn.executeSql(
-              `CREATE TABLE IF NOT EXISTS binding_reg(id TEXT,name TEXT PRIMARY KEY)`,
+              `CREATE TABLE IF NOT EXISTS Binding_reg(location TEXT,appliance TEXT, model TEXT,paired/unpaired TEXT,macid TEXT,properties 
+              TEXT,status TEXT)`,
               [],
             );
           }
@@ -148,7 +152,7 @@ const App = () => {
       <Stack.Navigator
         initialRouteName="Controller"
         screenOptions={{
-          headerStyle: {backgroundColor: '#633689'},
+          headerStyle: {backgroundColor: `#008080`},
           headerTintColor: '#fff',
           headerTitleStyle: {fontWeight: 'bold'},
         }}>

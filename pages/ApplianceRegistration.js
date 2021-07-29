@@ -41,7 +41,7 @@ const ApplianceRegistration = ({navigation}) => {
     try {
       // const value = await AsyncStorage.getItem('user_config');
       db.transaction(tx => {
-        tx.executeSql('SELECT * FROM appliance_reg', [], (tx, results) => {
+        tx.executeSql('SELECT * FROM Appliance_Reg', [], (tx, results) => {
           var temp = [];
           for (let i = 0; i < results.rows.length; ++i)
             temp.push(results.rows.item(i));
@@ -59,8 +59,8 @@ const ApplianceRegistration = ({navigation}) => {
     function deleteappliance(userdata) {
       db.transaction(tx => {
         tx.executeSql(
-          'DELETE FROM  appliance_reg where name=?',
-          [userdata.name],
+          'DELETE FROM  Appliance_Reg where Appliance=?',
+          [userdata.Appliance],
           (tx, results) => {
             console.log('Results', results.rowsAffected);
             if (results.rowsAffected > 0) {
@@ -75,7 +75,7 @@ const ApplianceRegistration = ({navigation}) => {
         );
       });
       db.transaction(tx => {
-        tx.executeSql('SELECT * FROM binding_reg', [], (tx, results) => {
+        tx.executeSql('SELECT * FROM Binding_Reg', [], (tx, results) => {
           var temp = [];
           for (let i = 0; i < results.rows.length; ++i)
             temp.push(results.rows.item(i));
@@ -86,7 +86,9 @@ const ApplianceRegistration = ({navigation}) => {
               let temp1 = [];
               temp1.push(a);
 
-              const result = temp1.find(x => x.name.includes(userdata.name));
+              const result = temp1.find(x =>
+                x.Binding.includes(userdata.Appliance),
+              );
               console.log('result', result);
               if (result) {
                 deletebinding(result);
@@ -126,11 +128,11 @@ const ApplianceRegistration = ({navigation}) => {
     );
   };
   function deletebinding(userdata) {
-    console.log(userdata.id);
+    console.log(userdata.Binding);
     db.transaction(tx => {
       tx.executeSql(
-        'DELETE FROM  binding_reg where id=?',
-        [userdata.id],
+        'DELETE FROM  Binding_Reg where Binding=?',
+        [userdata.Binding],
         (tx, results) => {
           console.log('Results', results.rowsAffected);
           if (results.rowsAffected > 0) {
@@ -148,22 +150,12 @@ const ApplianceRegistration = ({navigation}) => {
       alert('Please enter Device');
       return;
     }
-    let today = new Date();
-    let date =
-      today.getFullYear() +
-      '-' +
-      (today.getMonth() + 1) +
-      '-' +
-      today.getDate();
-    let date1 = today.getFullYear() + (today.getMonth() + 1) + today.getDate();
-    let time =
-      today.getHours() + ':' + today.getMinutes() + ':' + today.getSeconds();
-    let dateTime = date + time;
+
     db.transaction(function (tx) {
       tx.executeSql(
-        `INSERT INTO appliance_reg (id,name)
-                 VALUES (?,?)`,
-        [dateTime.toString(), Device.toString().toUpperCase()],
+        `INSERT INTO Appliance_Reg (Appliance)
+                 VALUES (?)`,
+        [Device.toString().toUpperCase()],
         (tx, results) => {
           console.log('Results', results.rowsAffected);
           if (results.rowsAffected > 0) {
@@ -182,77 +174,67 @@ const ApplianceRegistration = ({navigation}) => {
   };
 
   return (
-    <>
-      <View
+    <View
+      style={{
+        flex: 1,
+        height: 40,
+        marginTop: 20,
+        marginLeft: 35,
+        marginRight: 35,
+        margin: 10,
+      }}>
+      <TextInput
         style={{
-          flex: 1,
-          height: 40,
-          marginTop: 20,
-          marginLeft: 35,
-          marginRight: 35,
-          margin: 10,
-        }}>
-        <TextInput
-          style={{
-            borderWidth: 2,
-          }}
-          placeholder=" Enter Device name eg:Fan,AC,Light...etc"
-          onChangeText={Device => setDevice(Device)}
-        />
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => handleSubmitPress()}>
-          <Text>Add Appliance</Text>
-        </TouchableOpacity>
-        {/* <View>
-        <ModalDropdown
-          textStyle={{
-            fontSize: 16,
-            paddingTop: 8,
-            paddingBottom: 8,
-            alignItems: 'center',
-          }}
-          dropdownTextStyle={{fontSize: 30}}
-          options={asyncapp}
-          defaultValue={'Appliance List'}
-          onSelect={(idx, value) => setdrop_app(value)}></ModalDropdown>
-      </View> */}
-        <FlatList
-          keyExtractor={(item, id) => id}
-          data={asyncapp}
-          renderItem={({item}) => (
+          borderWidth: 2,
+          color: '#05375a',
+        }}
+        placeholderTextColor="#05375a"
+        placeholder=" Enter Device name eg:Fan,AC,Light...etc"
+        onChangeText={Device => setDevice(Device)}
+      />
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => handleSubmitPress()}>
+        <Text>Add Appliance</Text>
+      </TouchableOpacity>
+      <FlatList
+        keyExtractor={(item, id) => id}
+        data={asyncapp}
+        renderItem={({item}) => (
+          <View>
+            <Text
+              adjustsFontSizeToFit
+              numberOfLines={6}
+              style={{
+                textAlignVertical: 'center',
+                textAlign: 'center',
+                backgroundColor: 'rgba(0,0,0,0)',
+                color: 'black',
+                fontWeight: 'bold',
+              }}>
+              {item.Appliance}
+            </Text>
             <View
               style={{
-                flex: 1,
-                height: 40,
-                marginTop: 20,
-                margin: 10,
+                flex: 10,
+                flexDirection: 'row',
+                justifyContent: 'space-between',
               }}>
-              <Text
-                style={{
-                  position: 'absolute',
-                  width: '100%',
-                  backgroundColor: 'beige',
-                  bottom: 0,
-                }}>
-                {item.name}
-              </Text>
-              <Left>
+              <Right>
                 <Button
                   onPress={() => handledeletePress(item)}
-                  style={styles.actionButton}
-                  danger>
+                  style={{backgroundColor: 'red', width: '18%', height: 45}}>
                   <Icon name="trash" active />
                 </Button>
-              </Left>
+              </Right>
             </View>
-          )}
-          ItemSeparatorComponent={() => {
-            return <View style={styles.separatorLine}></View>;
-          }}
-        />
-      </View>
-    </>
+          </View>
+        )}
+        ItemSeparatorComponent={() => {
+          return <View style={styles.separatorLine}></View>;
+        }}
+      />
+    </View>
   );
 };
 
@@ -269,8 +251,15 @@ const styles = StyleSheet.create({
     marginLeft: 200,
   },
   separatorLine: {
-    height: 1,
-    backgroundColor: 'black',
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderWidth: 2,
+    borderColor: 'rgba(0,0,0,.3)',
+    margin: 3,
   },
 });
 export default ApplianceRegistration;

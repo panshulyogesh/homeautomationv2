@@ -46,19 +46,14 @@ const LocationRegistration = ({navigation}) => {
 
   const retrieveData = async () => {
     try {
-      // const value = await AsyncStorage.getItem('user_config');
       db.transaction(tx => {
-        tx.executeSql('SELECT * FROM location_reg', [], (tx, results) => {
+        tx.executeSql('SELECT * FROM Location_Reg', [], (tx, results) => {
           var temp = [];
           for (let i = 0; i < results.rows.length; ++i)
             temp.push(results.rows.item(i));
           setasyncloc(temp);
-          // console.log("items",temp);
         });
       });
-
-      //console.log('async data loc:', async_data);
-      // console.log('async data app:', async_data.appliance);
     } catch (error) {
       console.log('error', error);
     }
@@ -70,8 +65,8 @@ const LocationRegistration = ({navigation}) => {
     function deletelocation(userdata) {
       db.transaction(tx => {
         tx.executeSql(
-          'DELETE FROM  location_reg where name=?',
-          [userdata.name],
+          'DELETE FROM  Location_Reg where Location=?',
+          [userdata.Location],
           (tx, results) => {
             console.log('Results', results.rowsAffected);
             if (results.rowsAffected > 0) {
@@ -86,24 +81,27 @@ const LocationRegistration = ({navigation}) => {
         );
       });
       db.transaction(tx => {
-        tx.executeSql('SELECT * FROM binding_reg', [], (tx, results) => {
+        tx.executeSql('SELECT * FROM Binding_Reg', [], (tx, results) => {
           var temp = [];
           for (let i = 0; i < results.rows.length; ++i)
             temp.push(results.rows.item(i));
-          console.log(temp);
+          //Alert console.log(temp);
 
           if (temp.length > 0) {
             temp.forEach(function (a, index) {
               let temp1 = [];
               temp1.push(a);
 
-              const result = temp1.find(x => x.name.includes(userdata.name));
+              const result = temp1.find(data =>
+                data.Binding.includes(userdata.Location),
+              );
               console.log('result', result);
               if (result) {
                 deletebinding(result);
               }
             });
           }
+          // alert (//paired//notfound /no vacancy)
 
           // var inventory = [
           //   {name: 'owner_hall_light', id: 2},
@@ -137,11 +135,11 @@ const LocationRegistration = ({navigation}) => {
     );
   };
   function deletebinding(userdata) {
-    console.log(userdata.id);
+    console.log(userdata.Binding);
     db.transaction(tx => {
       tx.executeSql(
-        'DELETE FROM  binding_reg where id=?',
-        [userdata.id],
+        'DELETE FROM  Binding_Reg where Binding=?',
+        [userdata.Binding],
         (tx, results) => {
           console.log('Results', results.rowsAffected);
           if (results.rowsAffected > 0) {
@@ -159,23 +157,11 @@ const LocationRegistration = ({navigation}) => {
       alert('Please enter location');
       return;
     }
-    let today = new Date();
-    let date =
-      today.getFullYear() +
-      '-' +
-      (today.getMonth() + 1) +
-      '-' +
-      today.getDate();
-    let date1 = today.getFullYear() + (today.getMonth() + 1) + today.getDate();
-    let time =
-      today.getHours() + ':' + today.getMinutes() + ':' + today.getSeconds();
-    let dateTime = date + time;
 
     db.transaction(function (tx) {
       tx.executeSql(
-        `INSERT INTO location_reg (id,name)
-               VALUES (?,?)`,
-        [dateTime.toString(), LocationName.toString().toUpperCase()],
+        `INSERT INTO Location_Reg (Location) VALUES (?)`,
+        [LocationName.toString().toUpperCase()],
         (tx, results) => {
           console.log('Results', results.rowsAffected);
           if (results.rowsAffected > 0) {
@@ -194,80 +180,69 @@ const LocationRegistration = ({navigation}) => {
   };
 
   return (
-    <>
-      <View
+    <View
+      style={{
+        flex: 10,
+        height: 40,
+        marginTop: 20,
+        marginLeft: 35,
+        marginRight: 35,
+        margin: 10,
+      }}>
+      <TextInput
         style={{
-          flex: 10,
-          height: 40,
-          marginTop: 20,
-          marginLeft: 35,
-          marginRight: 35,
-          margin: 10,
-        }}>
-        <TextInput
-          style={{
-            borderWidth: 2,
-          }}
-          placeholder=" Enter Location name eg: Hall,dining,Kitchen...etc"
-          onChangeText={LocationName => setLocationName(LocationName)}
-        />
+          borderWidth: 2,
+          color: '#05375a',
+        }}
+        placeholderTextColor="#05375a"
+        placeholder=" Enter Location name eg: Hall,dining,Kitchen...etc"
+        onChangeText={LocationName => setLocationName(LocationName)}
+      />
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => handleSubmitPress(handleSubmitPress + 1)}>
-          <Text>Add location</Text>
-        </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => handleSubmitPress()}>
+        <Text>Add location</Text>
+      </TouchableOpacity>
 
-        {/* <View>
-        <ModalDropdown
-          textStyle={{
-            fontSize: 16,
-            paddingTop: 8,
-            paddingBottom: 8,
-            alignItems: 'center',
-          }}
-          dropdownTextStyle={{fontSize: 30}}
-          options={asyncloc}
-          defaultValue={'Location List'}
-          onSelect={(idx, value) => setdrop_loc(value)}></ModalDropdown>
-      </View> */}
-
-        <FlatList
-          keyExtractor={(item, id) => id}
-          data={asyncloc}
-          renderItem={({item}) => (
+      <FlatList
+        keyExtractor={(item, id) => id}
+        data={asyncloc}
+        renderItem={({item}) => (
+          <View>
+            <Text
+              adjustsFontSizeToFit
+              numberOfLines={6}
+              style={{
+                textAlignVertical: 'center',
+                textAlign: 'center',
+                backgroundColor: 'rgba(0,0,0,0)',
+                color: 'black',
+                fontWeight: 'bold',
+              }}>
+              {item.Location}
+            </Text>
             <View
               style={{
-                flex: 1,
-                height: 40,
-                marginTop: 20,
-                margin: 10,
+                flex: 10,
+                flexDirection: 'row',
+                justifyContent: 'space-between',
               }}>
-              <Text
-                style={{
-                  position: 'absolute',
-                  width: '100%',
-                  backgroundColor: 'beige',
-                  bottom: 0,
-                }}>
-                {item.name}
-              </Text>
-              <Left>
+              <Right>
                 <Button
                   onPress={() => handledeletePress(item)}
-                  style={styles.actionButton}
-                  danger>
+                  style={{backgroundColor: 'red', width: '18%', height: 45}}>
                   <Icon name="trash" active />
                 </Button>
-              </Left>
+              </Right>
             </View>
-          )}
-          ItemSeparatorComponent={() => {
-            return <View style={styles.separatorLine}></View>;
-          }}
-        />
-      </View>
-    </>
+          </View>
+        )}
+        ItemSeparatorComponent={() => {
+          return <View style={styles.separatorLine}></View>;
+        }}
+      />
+    </View>
   );
 };
 
@@ -286,8 +261,15 @@ const styles = StyleSheet.create({
   },
 
   separatorLine: {
-    height: 1,
-    backgroundColor: 'black',
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderWidth: 2,
+    borderColor: 'rgba(0,0,0,.3)',
+    margin: 3,
   },
   dropdown_3: {
     marginVertical: 20,
@@ -301,29 +283,3 @@ const styles = StyleSheet.create({
     flexGrow: 100,
   },
 });
-
-/*
-index_ststus=0
-index=0
-
- binding_data= [amit_hall_fan_bajaj,
-  amit_hall_bulb1_bajaj,
-  amit_hall_bulb2_bajaj,
-  rahul_bedroom_bulb_led,
-  ]
-
-  for loop{
-    if (binding_data==LA){
-     index_ststus=1
-     break
-    }
-    index++
-  }
-
-  if(index_sttus ==1){
-    pop(bindding_data[index])
-  }
-
-  index=2
-  index_ststus=1
-*/
