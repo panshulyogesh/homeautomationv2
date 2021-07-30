@@ -128,6 +128,19 @@ const DummyScreen = ({navigation, route}) => {
 
         {cancelable: false},
       );
+    } else if (route.params.paramKey == 'Binding_updation') {
+      Alert.alert(
+        'Success',
+        'pairing successfull',
+        [
+          {
+            text: 'Ok',
+            onPress: () => navigation.navigate('Binding'),
+          },
+        ],
+
+        {cancelable: false},
+      );
     }
   };
 

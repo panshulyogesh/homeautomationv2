@@ -135,10 +135,26 @@ const App = () => {
         [],
         function (tx, res) {
           if (res.rows.length == 0) {
-            txn.executeSql('DROP TABLE IF EXISTS Binding_reg', []);
+            txn.executeSql('DROP TABLE IF EXISTS Binding_Reg', []);
             txn.executeSql(
-              `CREATE TABLE IF NOT EXISTS Binding_reg(location TEXT,appliance TEXT, model TEXT,paired/unpaired TEXT,macid TEXT,properties 
-              TEXT,status TEXT)`,
+              `CREATE TABLE IF NOT EXISTS Binding_Reg(location TEXT,appliance TEXT, model TEXT,paired_unpaired TEXT,macid TEXT,properties 
+              TEXT,status TEXT,color TEXT)`,
+              [],
+            );
+          }
+        },
+      );
+    });
+    db.transaction(function (txn) {
+      txn.executeSql(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='models_list'",
+        [],
+        function (tx, res) {
+          if (res.rows.length == 0) {
+            txn.executeSql('DROP TABLE IF EXISTS models_list', []);
+            txn.executeSql(
+              `CREATE TABLE IF NOT EXISTS models_list(id INTEGER PRIMARY KEY AUTOINCREMENT, manufacturer TEXT,Model TEXT, Device_Type TEXT,Properties TEXT,
+              Valid_States TEXT,Units TEXT)`,
               [],
             );
           }
