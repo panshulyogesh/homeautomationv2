@@ -1,4 +1,5 @@
 import React, {useState, createRef, useEffect} from 'react';
+
 import {
   TouchableOpacity,
   StyleSheet,
@@ -22,28 +23,16 @@ import LinearGradient from 'react-native-linear-gradient';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 import Feather from 'react-native-vector-icons/Feather';
-let configurations = {
-  owner: {
-    owner_name: '',
-    owner_password: '',
-    MailId: '',
-    PhoneNumber: '',
-    Property_name: '',
-    Area: '',
-    State: '',
-    country: '',
-    Street: '',
-    Door_Number: '',
-  },
-};
+//! conf variable is declared and defined as false by default and is used for validating pwd status in registration screen
 let conf = {
   pwd_status: false,
 };
+
 import {openDatabase} from 'react-native-sqlite-storage';
 var db = openDatabase({name: 'UserDatabase.db'});
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {pwd_status} from './FirstPage';
-
+import TcpSocket from 'react-native-tcp-socket';
 const OwnerRegistration = ({navigation}) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [OwnerName, setOwnerName] = useState('');
@@ -55,19 +44,20 @@ const OwnerRegistration = ({navigation}) => {
   const [Street, setStreet] = useState('');
   const [Area, setArea] = useState('');
   const [State, setState] = useState('');
-  const [country, setcountry] = useState('');
+  const [pincode, setpincode] = useState('');
   const [Door_Number, setDoor_Number] = useState('');
 
   async function handleSubmitPress() {
     setModalVisible(!modalVisible);
     if (
       !OwnerName ||
+      !password ||
       !MailId ||
       !PhoneNumber ||
       !Property_name ||
       !Area ||
       !State ||
-      !country ||
+      !pincode ||
       !Street ||
       !Door_Number
     ) {
@@ -75,33 +65,22 @@ const OwnerRegistration = ({navigation}) => {
       return;
     }
 
-    configurations.owner.owner_name = OwnerName.toString().toUpperCase();
-    configurations.owner.owner_password = password.toString().toUpperCase();
-    configurations.owner.MailId = MailId.toString();
-    configurations.owner.PhoneNumber = PhoneNumber.toString().toUpperCase();
-    configurations.owner.Property_name = Property_name.toString().toUpperCase();
-    configurations.owner.Area = Area.toString().toUpperCase();
-    configurations.owner.State = State.toString().toUpperCase();
-    configurations.owner.country = country.toString().toUpperCase();
-    configurations.owner.Street = Street.toString().toUpperCase();
-    configurations.owner.Door_Number = Door_Number.toString().toUpperCase();
-
     db.transaction(function (tx) {
       tx.executeSql(
         `INSERT INTO Owner_Reg ( 
-              owner_name, owner_password,MailId,PhoneNumber,Property_name ,Area ,State ,country ,Street,Door_Number)
+              owner_name, owner_password,MailId,PhoneNumber,Property_name ,Area ,State ,pincode ,Street,Door_Number)
                VALUES (?,?,?,?,?,?,?,?,?,?)`,
         [
-          configurations.owner.owner_name,
-          configurations.owner.owner_password,
-          configurations.owner.MailId,
-          configurations.owner.PhoneNumber,
-          configurations.owner.Property_name,
-          configurations.owner.Area,
-          configurations.owner.State,
-          configurations.owner.country,
-          configurations.owner.Street,
-          configurations.owner.Door_Number,
+          OwnerName.toString().toUpperCase(),
+          password.toString().toUpperCase(),
+          MailId.toString(),
+          PhoneNumber.toString().toUpperCase(),
+          Property_name.toString().toUpperCase(),
+          Area.toString().toUpperCase(),
+          State.toString().toUpperCase(),
+          pincode.toString().toUpperCase(),
+          Street.toString().toUpperCase(),
+          Door_Number.toString().toUpperCase(),
         ],
         (tx, results) => {
           console.log('Results', results.rowsAffected);
@@ -127,6 +106,56 @@ const OwnerRegistration = ({navigation}) => {
       );
     });
   }
+
+  // function ownerreg() {
+  //   if (
+  //     !OwnerName ||
+  //     !MailId ||
+  //     !PhoneNumber ||
+  //     !Property_name ||
+  //     !Area ||
+  //     !State ||
+  //     !pincode ||
+  //     !Street ||
+  //     !Door_Number
+  //   ) {
+  //     alert('Please fill all the fields');
+  //     return;
+  //   }
+
+  //   //Owner_name;controller_Key;Device_name;Device_Model;Custom_SSID;DAQ_STACTIC_IP;DAQ_STACTIC_Port;Device_IP;Device_Port;
+  //   let ownerpair =
+  //     OwnerName +
+  //     '_' +
+  //     MailId +
+  //     '_' +
+  //     PhoneNumber +
+  //     '_' +
+  //     Property_name +
+  //     '_' +
+  //     Area +
+  //     '_' +
+  //     State +
+  //     '_' +
+  //     pincode +
+  //     '_' +
+  //     Street +
+  //     '_' +
+  //     Door_Number +
+  //     ';' +
+  //     'ACSREACTNATIVE123KEY' +
+  //     ';';
+  //   'devname' +
+  //     ';' +
+  //     'devmodel' +
+  //     ';' +
+  //     'Airtel_5Ghz' +
+  //     ';' +
+  //     'daqip' +
+  //     ';' +
+  //     'daqport' +
+  //     ';';
+  // }
 
   return (
     <View style={styles.container}>
@@ -197,14 +226,14 @@ const OwnerRegistration = ({navigation}) => {
               onChangeText={State => setState(State)}
             />
           </View>
-          <Text style={styles.text_footer}>Enter Your Country</Text>
+          <Text style={styles.text_footer}>Enter Your Pin Code</Text>
           <View style={styles.action}>
             <TextInput
               style={styles.textInput}
               autoCapitalize="none"
               placeholderTextColor="#05375a"
-              placeholder="Country"
-              onChangeText={country => setcountry(country)}
+              placeholder="pin code"
+              onChangeText={pincode => setpincode(pincode)}
             />
           </View>
           <Text style={styles.text_footer}>Enter Your Street</Text>
@@ -241,7 +270,6 @@ const OwnerRegistration = ({navigation}) => {
               <View style={styles.centeredView}>
                 <View style={styles.modalView}>
                   <Text style={styles.modalText}>ENTER NEW PASSWORD</Text>
-
                   <TextInput
                     style={{
                       borderWidth: 2,
@@ -287,6 +315,23 @@ const OwnerRegistration = ({navigation}) => {
                 </Text>
               </LinearGradient>
             </Pressable>
+            {/* <Pressable
+              style={styles.signIn}
+              onPress={() => setModalVisible(true)}>
+              <LinearGradient
+                colors={[`#008080`, '#01ab9d']}
+                style={styles.signIn}>
+                <Text
+                  style={[
+                    styles.textSign,
+                    {
+                      color: '#fff',
+                    },
+                  ]}>
+                  reg owner
+                </Text>
+              </LinearGradient>
+            </Pressable> */}
           </View>
         </ScrollView>
       </Animatable.View>

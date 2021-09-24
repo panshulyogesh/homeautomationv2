@@ -3,11 +3,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   View,
-  Text,
   SafeAreaView,
   ScrollView,
   TextInput,
-  Button,
   Alert,
   Modal,
   Pressable,
@@ -25,20 +23,26 @@ import Feather from 'react-native-vector-icons/Feather';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-let configurations = {
-  owner: {
-    owner_name: '',
-    owner_password: '',
-    MailId: '',
-    PhoneNumber: '',
-    Property_name: '',
-    Area: '',
-    State: '',
-    country: '',
-    Street: '',
-    Door_Number: '',
-  },
-};
+import {
+  Container,
+  Header,
+  Content,
+  Left,
+  Text,
+  Button,
+  Icon,
+  Right,
+  CheckBox,
+  Title,
+  H1,
+  Spinner,
+  Fab,
+} from 'native-base';
+import {MaskedTextInput} from 'react-native-mask-text';
+import TcpSocket from 'react-native-tcp-socket';
+import {NetworkInfo} from 'react-native-network-info';
+import DeviceInfo from 'react-native-device-info';
+import {getUniqueId, getManufacturer} from 'react-native-device-info';
 import {openDatabase} from 'react-native-sqlite-storage';
 var db = openDatabase({name: 'UserDatabase.db'});
 
@@ -53,10 +57,12 @@ const ModifyOwner = ({navigation}) => {
   const [Street, setStreet] = useState('');
   const [Area, setArea] = useState('');
   const [State, setState] = useState('');
-  const [country, setcountry] = useState('');
+  const [pincode, setpincode] = useState('');
   const [Door_Number, setDoor_Number] = useState('');
   const [owner, setowner] = useState('');
-
+  const [deviceip, setdeviceip] = useState('');
+  const [showmodal, setshowmodal] = useState(false);
+  const [macid, setmacid] = useState('');
   let updateAllStates = (
     ownername,
     owner_password,
@@ -65,7 +71,7 @@ const ModifyOwner = ({navigation}) => {
     Property_name,
     Area,
     State,
-    country,
+    pincode,
     Street,
     Door_Number,
   ) => {
@@ -76,7 +82,7 @@ const ModifyOwner = ({navigation}) => {
     setProperty_name(Property_name);
     setArea(Area);
     setState(State);
-    setcountry(country);
+    setpincode(pincode);
     setStreet(Street);
     setDoor_Number(Door_Number);
   };
@@ -98,7 +104,7 @@ const ModifyOwner = ({navigation}) => {
                 res.Property_name,
                 res.Area,
                 res.State,
-                res.country,
+                res.pincode,
                 res.Street,
                 res.Door_Number,
               );
@@ -109,6 +115,10 @@ const ModifyOwner = ({navigation}) => {
           },
         );
       });
+      // DeviceInfo.getIpAddress().then(ip => {
+      //console.log(ip);
+      //   setdeviceip(ip);
+      // });
     }, []),
   );
 
@@ -122,7 +132,7 @@ const ModifyOwner = ({navigation}) => {
       !Property_name ||
       !Area ||
       !State ||
-      !country ||
+      !pincode ||
       !Street ||
       !Door_Number
     ) {
@@ -130,33 +140,22 @@ const ModifyOwner = ({navigation}) => {
       return;
     }
 
-    configurations.owner.owner_name = OwnerName.toUpperCase();
-    configurations.owner.owner_password = password.toUpperCase();
-    configurations.owner.MailId = MailId;
-    configurations.owner.PhoneNumber = PhoneNumber.toUpperCase();
-    configurations.owner.Property_name = Property_name.toUpperCase();
-    configurations.owner.Area = Area.toUpperCase();
-    configurations.owner.State = State.toUpperCase();
-    configurations.owner.country = country.toUpperCase();
-    configurations.owner.Street = Street.toUpperCase();
-    configurations.owner.Door_Number = Door_Number.toUpperCase();
-
     db.transaction(function (tx) {
       tx.executeSql(
         `UPDATE  Owner_Reg SET 
-              owner_name=?, owner_password=?,MailId=?,PhoneNumber=?,Property_name=? ,Area=?,State=?,country=?,Street=?,Door_Number=?
+              owner_name=?, owner_password=?,MailId=?,PhoneNumber=?,Property_name=? ,Area=?,State=?,pincode=?,Street=?,Door_Number=?
               where Id=?`,
         [
-          configurations.owner.owner_name,
-          configurations.owner.owner_password,
-          configurations.owner.MailId,
-          configurations.owner.PhoneNumber,
-          configurations.owner.Property_name,
-          configurations.owner.Area,
-          configurations.owner.State,
-          configurations.owner.country,
-          configurations.owner.Street,
-          configurations.owner.Door_Number,
+          OwnerName.toUpperCase(),
+          password.toUpperCase(),
+          MailId,
+          PhoneNumber.toUpperCase(),
+          Property_name.toUpperCase(),
+          Area.toUpperCase(),
+          State.toUpperCase(),
+          pincode.toUpperCase(),
+          Street.toUpperCase(),
+          Door_Number.toUpperCase(),
           '1',
         ],
         (tx, results) => {
@@ -182,12 +181,145 @@ const ModifyOwner = ({navigation}) => {
     });
   };
 
+  function ownerreg() {
+    ///REGISTER/Owner_name;controller_Key;Device_name;Device_Model;Custom_SSID;Custom_pwd;DAQ_STACTIC_IP;DAQ_STACTIC_Port;Device_IP;Device_Port;
+
+    //!     owner_name ====> sahique,.......
+    //!     controller_key ==>  generated key on mobile side for encryption/decryption
+    //!     Device_name
+    //!     Device_Model
+    //!     Custom_SSID ====> router ssid default value
+    //!     Custom_pwd ===> router pwd default value
+    //!     ssid for esp32 web-server
+    //!    pwd for esp32 webserver
+    //!     DAQ_STACTIC_IP= => raspberry pi ip address
+    //!     DAQ_STACTIC_Port ==>  raspberry pi port  [DAQ ===> DATA ACCQUISITION]
+    //!     Device_IP ========>  IP ADDRESS OF ESP
+    //!     Device_PorT =====>  PORT OF ESP
+    ///Owner_name;controller_Key;Device_name;Device_Model;Custom_SSID;Custom_Password;DAQ_STACTIC_IP;DAQ_STACTIC_Port;Device_IP;Device_Port;Device_SSID;Device_Password;
+    let ownerpair =
+      macid.toUpperCase() +
+      '/' +
+      'REGISTER' +
+      '/' +
+      OwnerName +
+      // '_' +
+      // Door_Number +
+      // '_' +
+      // Property_name +
+      // '_' +
+      // Street +
+      // '_' +
+      // Area +
+      // '_' +
+      // State +
+      // '_' +
+      // pincode +
+      ';' +
+      'ACSREACTNATIVE123KEY' +
+      ';' +
+      'devname' +
+      ';' +
+      'devmodel' +
+      ';' +
+      'Airtel_5Ghz' +
+      ';' +
+      'cuspass' +
+      ';' +
+      'daqip' +
+      ';' +
+      'daqport' +
+      ';' +
+      '192.168.4.1' +
+      ';' +
+      '80' +
+      ';' +
+      'devicessid' +
+      ';' +
+      'pass' +
+      ';' +
+      '#';
+
+    console.log(ownerpair);
+    //! TCP PROTOCOL OVER WIFI
+    let client = TcpSocket.createConnection(
+      //!   FACTORY DEFAULT
+      {port: 80, host: '192.168.4.1'},
+      () => {
+        client.write(ownerpair.toString());
+      },
+    );
+    client.on('connect', () => {
+      console.log('Opened client on ' + JSON.stringify(client.address()));
+    });
+    client.on('data', data => {
+      console.log('message was received from ESP32 ==>', data.toString());
+      //ack:fail/success;macid#
+
+      let ack = data
+        .toString()
+        .replace(':', ',')
+        .replace(';', ',')
+        .replace('#', '')
+        .split(',');
+      console.log(ack);
+      if (ack[1] == 'success') {
+        Alert.alert('success');
+      }
+
+      client.end();
+    });
+    client.on('error', error => {
+      console.log('error', error);
+      Alert.alert('please check your wifi connection');
+      client.end();
+    });
+    client.on('close', () => {
+      console.log('Connection closed!');
+      client.end();
+    });
+  }
+
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor="#008080" barStyle="light-content" />
       <View style={styles.header}>
         <Text style={styles.text_header}>Configure Now!</Text>
       </View>
+      <Modal
+        animationType={'slide'}
+        transparent={true}
+        visible={showmodal}
+        onRequestClose={() => {
+          console.log('Modal has been closed.');
+        }}>
+        <View style={styles.modal}>
+          <Button
+            transparent
+            onPress={() => {
+              setshowmodal(!showmodal);
+            }}>
+            <Icon name="close" style={{fontSize: 30, color: '#05375a'}} />
+          </Button>
+          <Text style={styles.text_footer}>Enter Mac Id</Text>
+          <View style={styles.action}>
+            <MaskedTextInput
+              style={styles.textInput}
+              placeholderTextColor="#05375a"
+              autoCapitalize="words"
+              placeholder="  Enter MAC ID  Ex:-B4:E6:2D:8D:73:C1 "
+              mask="SS:SS:SS:SS:SS:SS"
+              onChangeText={(text, rawText) => {
+                setmacid(text);
+                // console.log(rawText);
+              }}
+            />
+          </View>
+          <Button style={styles.button} onPress={() => ownerreg()}>
+            <Text>Save </Text>
+          </Button>
+        </View>
+      </Modal>
       <Animatable.View animation="fadeInUpBig" style={styles.footer}>
         <ScrollView>
           <Text style={styles.text_footer}>Edit Your Name </Text>
@@ -197,7 +329,7 @@ const ModifyOwner = ({navigation}) => {
               autoCapitalize="none"
               placeholderTextColor="#05375a"
               placeholder="Owner Name"
-              value={OwnerName}
+              defaultValue={OwnerName}
               onChangeText={OwnerName => setOwnerName(OwnerName)}
             />
           </View>
@@ -208,7 +340,7 @@ const ModifyOwner = ({navigation}) => {
               autoCapitalize="none"
               placeholderTextColor="#05375a"
               placeholder="Enter password"
-              value={password}
+              defaultValue={password}
               onChangeText={password => setpassword(password)}
             />
           </View>
@@ -219,7 +351,7 @@ const ModifyOwner = ({navigation}) => {
               autoCapitalize="none"
               placeholderTextColor="#05375a"
               placeholder="Mail Id"
-              value={MailId}
+              defaultValue={MailId}
               onChangeText={MailId => setMailId(MailId)}
             />
           </View>
@@ -231,7 +363,7 @@ const ModifyOwner = ({navigation}) => {
               placeholderTextColor="#05375a"
               placeholder="Phone Number"
               keyboardType="numeric"
-              value={PhoneNumber}
+              defaultValue={PhoneNumber}
               onChangeText={PhoneNumber => setPhoneNumber(PhoneNumber)}
             />
           </View>
@@ -242,7 +374,7 @@ const ModifyOwner = ({navigation}) => {
               autoCapitalize="none"
               placeholderTextColor="#05375a"
               placeholder="Property Name"
-              value={Property_name}
+              defaultValue={Property_name}
               onChangeText={Property_name => setProperty_name(Property_name)}
             />
           </View>
@@ -253,7 +385,7 @@ const ModifyOwner = ({navigation}) => {
               autoCapitalize="none"
               placeholderTextColor="#05375a"
               placeholder="City/Town/Village"
-              value={Area}
+              defaultValue={Area}
               onChangeText={Area => setArea(Area)}
             />
           </View>
@@ -264,19 +396,19 @@ const ModifyOwner = ({navigation}) => {
               autoCapitalize="none"
               placeholderTextColor="#05375a"
               placeholder="State"
-              value={State}
+              defaultValue={State}
               onChangeText={State => setState(State)}
             />
           </View>
-          <Text style={styles.text_footer}>Edit Your Country</Text>
+          <Text style={styles.text_footer}>Edit Your pin code</Text>
           <View style={styles.action}>
             <TextInput
               style={styles.textInput}
               autoCapitalize="none"
               placeholderTextColor="#05375a"
-              placeholder="Country"
-              value={country}
-              onChangeText={country => setcountry(country)}
+              placeholder="pincode"
+              defaultValue={pincode}
+              onChangeText={pincode => setpincode(pincode)}
             />
           </View>
           <Text style={styles.text_footer}>Edit Your Street</Text>
@@ -286,7 +418,7 @@ const ModifyOwner = ({navigation}) => {
               autoCapitalize="none"
               placeholderTextColor="#05375a"
               placeholder="Street"
-              value={Street}
+              defaultValue={Street}
               onChangeText={Street => setStreet(Street)}
             />
           </View>
@@ -299,7 +431,7 @@ const ModifyOwner = ({navigation}) => {
               autoCapitalize="none"
               placeholderTextColor="#05375a"
               placeholder="Apartment Number/House Number"
-              value={Door_Number}
+              defaultValue={Door_Number}
               onChangeText={Door_Number => setDoor_Number(Door_Number)}
             />
           </View>
@@ -321,6 +453,27 @@ const ModifyOwner = ({navigation}) => {
               </LinearGradient>
             </Pressable>
           </View>
+          <View style={styles.centeredView}>
+            <Pressable
+              style={styles.signIn}
+              onPress={() => {
+                setshowmodal(!showmodal);
+              }}>
+              <LinearGradient
+                colors={[`#008080`, '#01ab9d']}
+                style={styles.signIn}>
+                <Text
+                  style={[
+                    styles.textSign,
+                    {
+                      color: '#fff',
+                    },
+                  ]}>
+                  reg owner
+                </Text>
+              </LinearGradient>
+            </Pressable>
+          </View>
         </ScrollView>
       </Animatable.View>
     </View>
@@ -329,6 +482,11 @@ const ModifyOwner = ({navigation}) => {
 
 export default ModifyOwner;
 const styles = StyleSheet.create({
+  modal: {
+    height: '50%',
+    marginTop: 'auto',
+    backgroundColor: 'white',
+  },
   container: {
     flex: 1,
     backgroundColor: `#008080`,

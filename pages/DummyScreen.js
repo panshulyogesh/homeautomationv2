@@ -128,14 +128,53 @@ const DummyScreen = ({navigation, route}) => {
 
         {cancelable: false},
       );
-    } else if (route.params.paramKey == 'Binding_updation') {
+    } else if (route.params.paramKey == 'pairing') {
       Alert.alert(
         'Success',
         'pairing successfull',
         [
           {
             text: 'Ok',
-            onPress: () => navigation.navigate('Binding'),
+            onPress: () => navigation.navigate('Pairing'),
+          },
+        ],
+
+        {cancelable: false},
+      );
+    } else if (route.params.paramKey == 'unpairing') {
+      Alert.alert(
+        'Success',
+        'un-pairing successfull',
+        [
+          {
+            text: 'Ok',
+            onPress: () => navigation.navigate('Pairing'),
+          },
+        ],
+
+        {cancelable: false},
+      );
+    } else if (route.params.paramKey == 'daq') {
+      Alert.alert(
+        'Success',
+        'Storing successfull',
+        [
+          {
+            text: 'Ok',
+            onPress: () => navigation.navigate('acqreg'),
+          },
+        ],
+
+        {cancelable: false},
+      );
+    } else if (route.params.paramKey == 'check') {
+      Alert.alert(
+        'Success',
+        'data updated',
+        [
+          {
+            text: 'Ok',
+            onPress: () => navigation.navigate('acqreg'),
           },
         ],
 

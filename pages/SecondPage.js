@@ -15,6 +15,9 @@ const SecondPage = ({navigation}) => {
   const [view1, setview1] = useState(false);
   const [view2, setview2] = useState(false);
   const [view3, setview3] = useState(false);
+  const [ownerlen, setownerlen] = useState('');
+  const [loclen, setloclen] = useState('');
+  const [applen, setapplen] = useState('');
 
   function close(isShow) {
     setisDialogVisible(isShow);
@@ -51,19 +54,19 @@ const SecondPage = ({navigation}) => {
   const sendInput = async (inputText, close) => {
     console.log('password ' + inputText);
 
-    db.transaction(tx => {
-      tx.executeSql('SELECT * FROM Owner_Reg', [], (tx, results) => {
-        var temp = [];
-        for (let i = 0; i < results.rows.length; ++i)
-          temp.push(results.rows.item(i));
-        let ownerdata_obj = temp;
-        console.log('inside db', ownerdata_obj[0].owner_password);
-        setownerpwd(ownerdata_obj[0].owner_password);
-      });
-    });
-    console.log('ownerpwd', ownerpwd);
-    if (ownerpwd) {
-      if (inputText == ownerpwd) {
+    // db.transaction(tx => {
+    //   tx.executeSql('SELECT * FROM Owner_Reg', [], (tx, results) => {
+    //     var temp = [];
+    //     for (let i = 0; i < results.rows.length; ++i)
+    //       temp.push(results.rows.item(i));
+    //     let ownerdata_obj = temp;
+    //     console.log('inside db', ownerdata_obj[0].owner_password);
+    //     setownerpwd(ownerdata_obj[0].owner_password);
+    //   });
+    // });
+    console.log('ownerpwd', ownerpwd.owner_password);
+    if (ownerpwd.owner_password) {
+      if (inputText == ownerpwd.owner_password) {
         AsyncStorage.setItem('pwdstatus', JSON.stringify(true));
         setisDialogVisible(close);
       } else {
@@ -91,22 +94,35 @@ const SecondPage = ({navigation}) => {
     }
 
     db.transaction(tx => {
-      tx.executeSql('SELECT * FROM owner_reg', [], (tx, results) => {
-        var temp = [];
-        for (let i = 0; i < results.rows.length; ++i)
-          temp.push(results.rows.item(i));
-        let items = JSON.stringify(temp);
-        console.log(items);
-        console.log(items.length);
-        if (items.length == 2) {
-          setview(true);
-          //owner is n0t registered
-        } else {
-          setview(false);
-          setview1(true);
-          //owner is registered show location
-        }
-      });
+      tx.executeSql(
+        'SELECT * FROM Owner_Reg',
+        [],
+        (tx, results) => {
+          var temp = [];
+          for (let i = 0; i < results.rows.length; ++i) {
+            temp.push(results.rows.item(i));
+          }
+          let items = JSON.stringify(temp);
+          console.log(items);
+          let ownerdata_obj = temp;
+          setownerpwd(ownerdata_obj[0]);
+          // console.log(items);
+          console.log('owner length', items.length);
+          // setownerlen(items.length);
+
+          if (items.length == 2) {
+            setview(true);
+            //owner is n0t registered
+          } else {
+            setview(false);
+            setview1(true);
+            //owner is registered show location
+          }
+        },
+        (tx, error) => {
+          console.log(error);
+        },
+      );
     });
     db.transaction(tx => {
       tx.executeSql('SELECT * FROM location_reg', [], (tx, results) => {
@@ -115,7 +131,8 @@ const SecondPage = ({navigation}) => {
           temp.push(results.rows.item(i));
         let items = JSON.stringify(temp);
         console.log(items);
-        console.log(items.length);
+        console.log('loc length', items.length);
+        //setloclen(items.length);
         if (items.length > 2) {
           setview(false);
           setview1(false);
@@ -131,7 +148,8 @@ const SecondPage = ({navigation}) => {
           temp.push(results.rows.item(i));
         let items = JSON.stringify(temp);
         console.log(items);
-        console.log(items.length);
+        console.log('appliance len', items.length);
+
         if (items.length > 2) {
           setview(false);
           setview1(false);
@@ -142,7 +160,28 @@ const SecondPage = ({navigation}) => {
       });
     });
   };
-
+  // function update() {
+  //   console.log('lengths', ownerlen, loclen, applen);
+  //   if (ownerlen == 2) {
+  //     setview(true);
+  //   } else {
+  //     if (ownerlen > 2) {
+  //       setview(false);
+  //       setview1(true);
+  //       if (loclen > 2) {
+  //         setview2(true);
+  //         setview1(false);
+  //         setview(false);
+  //         if (applen > 2) {
+  //           setview3(true);
+  //           setview2(false);
+  //           setview1(false);
+  //           setview(false);
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
   useFocusEffect(
     React.useCallback(() => {
       retrieve();
@@ -250,6 +289,16 @@ const SecondPage = ({navigation}) => {
           style={styles.button}
           onPress={() => navigation.navigate('Binding')}>
           <Text>Binding</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate('Pairing')}>
+          <Text>Pairing</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate('acqreg')}>
+          <Text>Data-ACQ</Text>
         </TouchableOpacity>
       </View>
     );
